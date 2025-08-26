@@ -5,6 +5,8 @@ import { Helpers } from '../utils/helpers';
 import { AuthManager } from '../services/auth/manager';
 import { SettingsManager } from '../config/settings';
 import { ApiClient } from '../services/api/client';
+import { AIService } from '../services/ai/aiService';
+import { ExplanationPanel } from '../ui/webview/ExplanationPanel';
 import { ChatRequest, ContextReference, LinksRequest, SaveSnippetRequest } from '../services/api/types';
 
 export class CommandHandler {
@@ -14,12 +16,15 @@ export class CommandHandler {
   private authManager: AuthManager;
   private settingsManager: SettingsManager;
   private apiClient: ApiClient | null = null;
+  private aiService: AIService;
+  private context?: vscode.ExtensionContext;
 
   private constructor() {
     this.logger = Logger.getInstance();
     this.errorHandler = ErrorHandler.getInstance();
     this.authManager = AuthManager.getInstance();
     this.settingsManager = SettingsManager.getInstance();
+    this.aiService = AIService.getInstance();
   }
 
   public static getInstance(): CommandHandler {
@@ -29,7 +34,67 @@ export class CommandHandler {
     return CommandHandler.instance;
   }
 
+  public setContext(context: vscode.ExtensionContext): void {
+    this.context = context;
+  }
+
   public async initialize(): Promise<void> {
+    try {
+      this.logger.info('Initializing CommandHandler...');
+      
+      // Initialize AI Service first (independent functionality)
+      await this.initializeAIService();
+      
+      // Initialize platform connection if enabled (optional enhancement)
+      const platformEnabled = vscode.workspace.getConfiguration('learnLinker').get<boolean>('platform.enabled', false);
+      if (platformEnabled) {
+        await this.initializePlatformConnection();
+      } else {
+        this.logger.info('Platform connection disabled, running in standalone mode');
+      }
+
+      this.logger.info('CommandHandler initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize CommandHandler:', error);
+      // Don't throw - allow partial initialization
+      vscode.window.showWarningMessage('Learn Linker: Some features may be limited. Check the output panel for details.');
+    }
+  }
+  
+  private async initializeAIService(): Promise<void> {
+    try {
+      // Load AI configuration from settings
+      const config = AIService.loadConfigFromSettings();
+      
+      if (!config) {
+        this.logger.warn('AI configuration not found in settings');
+        vscode.window.showInformationMessage(
+          'Learn Linker: Please configure AI settings to enable code explanation.',
+          'Configure Now'
+        ).then(async (choice) => {
+          if (choice === 'Configure Now') {
+            const newConfig = await AIService.promptForConfiguration();
+            if (newConfig) {
+              await this.aiService.initialize(newConfig);
+            }
+          }
+        });
+        return;
+      }
+      
+      // Initialize AI service
+      const success = await this.aiService.initialize(config);
+      if (success) {
+        this.logger.info('AI Service initialized successfully');
+      } else {
+        this.logger.warn('AI Service initialization failed');
+      }
+    } catch (error) {
+      this.logger.error('Error initializing AI Service:', error);
+    }
+  }
+  
+  private async initializePlatformConnection(): Promise<void> {
     try {
       // Initialize auth manager
       await this.authManager.initialize();
@@ -38,17 +103,18 @@ export class CommandHandler {
       const authConfig = await this.authManager.getConfig();
       const authHeader = await this.authManager.getAuthorizationHeader();
       
-      this.apiClient = ApiClient.getInstance({
-        baseUrl: authConfig.platformUrl,
-        authToken: authHeader || undefined,
-        timeout: 30000,
-        retries: 3
-      });
-
-      this.logger.info('CommandHandler initialized successfully');
+      if (authConfig.platformUrl && authHeader) {
+        this.apiClient = ApiClient.getInstance({
+          baseUrl: authConfig.platformUrl,
+          authToken: authHeader,
+          timeout: 30000,
+          retries: 3
+        });
+        this.logger.info('Platform connection initialized');
+      }
     } catch (error) {
-      this.logger.error('Failed to initialize CommandHandler:', error);
-      throw error;
+      this.logger.error('Failed to initialize platform connection:', error);
+      // Don't throw - platform connection is optional
     }
   }
 
@@ -70,71 +136,94 @@ export class CommandHandler {
         return;
       }
 
-      // Validate auth config
-      const isValidAuth = await this.authManager.validateConfig();
-      if (!isValidAuth) {
+      // Check if AI service is ready
+      const aiStatus = this.aiService.getStatus();
+      if (!aiStatus.isReady) {
         const action = await vscode.window.showErrorMessage(
-          'Authentication configuration is invalid. Please configure your settings.',
-          'Open Settings'
+          'AI Service is not configured. Please configure your AI settings.',
+          'Configure Now'
         );
         
-        if (action === 'Open Settings') {
-          await this.authManager.showAuthSetupUI();
+        if (action === 'Configure Now') {
+          const config = await AIService.promptForConfiguration();
+          if (config) {
+            const success = await this.aiService.initialize(config);
+            if (!success) {
+              return;
+            }
+          } else {
+            return;
+          }
+        } else {
+          return;
         }
+      }
+
+      // Check if context is set
+      if (!this.context) {
+        vscode.window.showErrorMessage('Extension context not available. Please restart the extension.');
         return;
       }
 
       // Show progress
       await Helpers.withProgress(
-        'Analyzing code...',
+        'Explaining code...',
         async (progress) => {
-          progress.report({ message: 'Preparing code analysis...' });
+          progress.report({ message: 'Analyzing code...' });
           
-          // Extract code features
-          const features = Helpers.extractCodeFeatures(selectedText, fileInfo.language);
-          
-          progress.report({ message: 'Sending explanation request...' });
-          
-          // Prepare chat request
-          const contextReference: ContextReference = {
-            text: selectedText,
-            source: `IDE:${fileInfo.fileName}:${fileInfo.lineRange?.start || 1}-${fileInfo.lineRange?.end || 1}`,
-            type: 'code'
-          };
-
-          const chatRequest: ChatRequest = {
-            messages: [
+          try {
+            // Get code explanation from AI service
+            const stream = await this.aiService.explainCode(
+              selectedText,
               {
-                id: Helpers.generateId(),
-                sender: 'user',
-                content: `Please explain this ${fileInfo.language} code: ${selectedText}`,
-                timestamp: Date.now()
+                language: fileInfo.language,
+                fileName: fileInfo.fileName,
+                filePath: fileInfo.filePath,
+                lineRange: fileInfo.lineRange || undefined
+              },
+              {
+                style: 'detailed'
               }
-            ],
-            provider: this.settingsManager.getSettings().provider,
-            language: fileInfo.language,
-            contextReference
-          };
-
-          // Get API client
-          if (!this.apiClient) {
-            await this.initialize();
+            );
+            
+            progress.report({ message: 'Opening explanation panel...' });
+            
+            // Show webview panel with code info (context is guaranteed to be defined here)
+            const panel = await ExplanationPanel.show(this.context!, {
+              code: selectedText,
+              language: fileInfo.language,
+              fileName: fileInfo.fileName,
+              lineRange: fileInfo.lineRange || undefined
+            });
+            
+            progress.report({ message: 'Receiving explanation...' });
+            
+            // Stream content to the panel
+            await panel.streamContent(stream);
+            
+            // Show success message
+            vscode.window.showInformationMessage(
+              `Code explained successfully!`
+            );
+            
+            // If platform is connected, try to get knowledge links
+            if (this.apiClient) {
+              try {
+                progress.report({ message: 'Fetching related knowledge links...' });
+                // This will be implemented when platform API is ready
+                this.logger.debug('Platform connected, could fetch knowledge links here');
+              } catch (error) {
+                // Ignore - platform features are optional
+                this.logger.debug('Failed to fetch knowledge links:', error);
+              }
+            }
+            
+          } catch (error) {
+            this.logger.error('Failed to explain code:', error);
+            vscode.window.showErrorMessage(
+              `Failed to explain code: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
           }
-
-          // Send chat request (this will be implemented with SSE in the UI module)
-          this.logger.info('Chat request prepared', {
-            codeLength: selectedText.length,
-            language: fileInfo.language,
-            features
-          });
-
-          // For now, just show a message
-          vscode.window.showInformationMessage(
-            `Code analysis prepared for ${fileInfo.language} code (${selectedText.length} characters). Features detected: ${features.join(', ')}`
-          );
-          
-          // TODO: Implement actual SSE streaming and UI display
-          // This will be handled by the UI module
         }
       );
     } catch (error) {

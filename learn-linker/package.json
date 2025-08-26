@@ -37,37 +37,113 @@
     "configuration": {
       "title": "Learn Linker",
       "properties": {
-        "learnLinker.platformUrl": {
+        "learnLinker.ai.provider": {
           "type": "string",
-          "default": "http://localhost:3000",
-          "description": "URL of the learning platform"
-        },
-        "learnLinker.personalAccessToken": {
-          "type": "string",
-          "default": "",
-          "description": "Personal Access Token for API authentication"
-        },
-        "learnLinker.sendStrategy": {
-          "type": "string",
-          "enum": ["summary", "fullCode"],
+          "enum": ["openai", "deepseek", "anthropic", "doubao"],
           "enumDescriptions": [
-            "Send only summary/feature of the code",
-            "Send the full code content"
-          ],
-          "default": "summary",
-          "description": "Strategy for sending code to the platform"
-        },
-        "learnLinker.provider": {
-          "type": "string",
-          "enum": ["openai", "anthropic", "deepseek", "doubao"],
-          "enumDescriptions": [
-            "Use OpenAI provider",
-            "Use Anthropic provider",
-            "Use DeepSeek provider",
-            "Use Doubao provider"
+            "OpenAI (GPT-4, GPT-3.5)",
+            "DeepSeek (Cost-effective code model)",
+            "Anthropic Claude (Coming soon)",
+            "Doubao 豆包 (Coming soon)"
           ],
           "default": "openai",
-          "description": "AI provider to use for code explanation"
+          "description": "AI provider for code explanation",
+          "order": 1
+        },
+        "learnLinker.ai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for the selected AI provider",
+          "order": 2
+        },
+        "learnLinker.ai.model": {
+          "type": "string",
+          "default": "",
+          "description": "Model to use (optional, uses provider default if not set)",
+          "order": 3
+        },
+        "learnLinker.ai.apiBase": {
+          "type": "string",
+          "default": "",
+          "description": "Custom API endpoint (optional, for self-hosted or proxy)",
+          "order": 4
+        },
+        "learnLinker.ai.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Temperature for response generation (0-2, default: 0.7)",
+          "order": 5
+        },
+        "learnLinker.ai.maxTokens": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 100,
+          "maximum": 8000,
+          "description": "Maximum tokens in response (default: 2000)",
+          "order": 6
+        },
+        "learnLinker.storage.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable local snippet storage",
+          "order": 10
+        },
+        "learnLinker.storage.location": {
+          "type": "string",
+          "enum": ["workspace", "global"],
+          "enumDescriptions": [
+            "Store snippets per workspace",
+            "Store snippets globally"
+          ],
+          "default": "workspace",
+          "description": "Where to store code snippets",
+          "order": 11
+        },
+        "learnLinker.platform.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable connection to learning platform (optional)",
+          "order": 20
+        },
+        "learnLinker.platform.url": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "URL of the learning platform",
+          "order": 21
+        },
+        "learnLinker.platform.token": {
+          "type": "string",
+          "default": "",
+          "description": "Personal Access Token for platform authentication",
+          "order": 22
+        },
+        "learnLinker.platform.features.knowledgeLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show knowledge links when platform is connected",
+          "order": 23
+        },
+        "learnLinker.platform.features.snippetSync": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sync snippets to platform when connected",
+          "order": 24
+        },
+        "learnLinker.platform.features.autoSync": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically sync snippets in background",
+          "order": 25
+        },
+        "learnLinker.platform.features.syncInterval": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 60,
+          "description": "Sync interval in minutes (when auto-sync is enabled)",
+          "order": 26
         }
       }
     },
