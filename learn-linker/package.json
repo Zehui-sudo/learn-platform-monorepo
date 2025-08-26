@@ -1,0 +1,123 @@
+{
+  "name": "learn-linker",
+  "displayName": "Learn Linker",
+  "description": "Connects code with your learning platform for interactive learning experience.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Other",
+    "Education",
+    "Machine Learning"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "learn-linker.explainSelection",
+        "title": "Learn Linker: Explain Selection"
+      },
+      {
+        "command": "learn-linker.saveToReview",
+        "title": "Learn Linker: Save to Review"
+      },
+      {
+        "command": "learn-linker.openInLearningPlatform",
+        "title": "Learn Linker: Open in Learning Platform"
+      },
+      {
+        "command": "learn-linker.showSettings",
+        "title": "Learn Linker: Show Settings"
+      }
+    ],
+    "configuration": {
+      "title": "Learn Linker",
+      "properties": {
+        "learnLinker.platformUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "URL of the learning platform"
+        },
+        "learnLinker.personalAccessToken": {
+          "type": "string",
+          "default": "",
+          "description": "Personal Access Token for API authentication"
+        },
+        "learnLinker.sendStrategy": {
+          "type": "string",
+          "enum": ["summary", "fullCode"],
+          "enumDescriptions": [
+            "Send only summary/feature of the code",
+            "Send the full code content"
+          ],
+          "default": "summary",
+          "description": "Strategy for sending code to the platform"
+        },
+        "learnLinker.provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "deepseek", "doubao"],
+          "enumDescriptions": [
+            "Use OpenAI provider",
+            "Use Anthropic provider",
+            "Use DeepSeek provider",
+            "Use Doubao provider"
+          ],
+          "default": "openai",
+          "description": "AI provider to use for code explanation"
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "learn-linker.explainSelection",
+          "when": "editorHasSelection",
+          "group": "LearnLinker"
+        },
+        {
+          "command": "learn-linker.saveToReview",
+          "when": "editorHasSelection",
+          "group": "LearnLinker"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "dev": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "eventsource": "^2.0.2",
+    "uuid": "^9.0.1",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/eventsource": "^1.1.15",
+    "@types/uuid": "^9.0.7",
+    "@types/vscode": "^1.103.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "eslint": "^9.32.0",
+    "typescript": "^5.9.2",
+    "ts-loader": "^9.5.2",
+    "webpack": "^5.101.0",
+    "webpack-cli": "^6.0.1",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "learn-platform-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Monorepo for Web Learner (Next.js app) and Learn Linker (VS Code extension)",
+  "scripts": {
+    "install:all": "pnpm install",
+    "dev:web": "pnpm --filter ./web-learner dev",
+    "dev:linker": "pnpm --filter ./learn-linker dev",
+    "dev:all": "pnpm -r --filter ./web-learner --filter ./learn-linker run dev",
+    "build:web": "pnpm --filter ./web-learner build",
+    "build:linker": "pnpm --filter ./learn-linker package",
+    "build": "pnpm -r run build",
+    "start:web": "pnpm --filter ./web-learner start",
+    "lint:web": "pnpm --filter ./web-learner lint",
+    "lint:linker": "pnpm --filter ./learn-linker lint",
+    "lint": "pnpm -r run lint",
+    "test:linker": "pnpm --filter ./learn-linker test",
+    "test": "pnpm -r run test"
+  },
+  "engines": {
+    "node": ">=18.18.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.12.0"
+}
