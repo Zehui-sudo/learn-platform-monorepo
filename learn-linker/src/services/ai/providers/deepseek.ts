@@ -255,8 +255,8 @@ export class DeepSeekProvider implements AIProvider {
     let systemPrompt = SYSTEM_PROMPTS[style] || SYSTEM_PROMPTS.default;
     
     // Add DeepSeek-specific optimizations
-    systemPrompt += '\n\nNote: You are DeepSeek, optimized for code understanding and explanation. ' +
-                   'Leverage your deep understanding of programming concepts and best practices.';
+    systemPrompt += '\n\n注意：你是DeepSeek，专门优化用于代码理解和解释。' +
+                   '请充分利用你对编程概念和最佳实践的深入理解。记住：请使用中文回答。';
 
     messages.push({
       role: 'system',
@@ -267,34 +267,34 @@ export class DeepSeekProvider implements AIProvider {
     let userPrompt = '';
     
     if (context?.language) {
-      userPrompt += `Programming Language: ${context.language}\n`;
+      userPrompt += `编程语言: ${context.language}\n`;
     }
     
     if (context?.fileName) {
-      userPrompt += `File Name: ${context.fileName}\n`;
+      userPrompt += `文件名: ${context.fileName}\n`;
     }
     
     if (context?.lineRange) {
-      userPrompt += `Line Range: ${context.lineRange.start}-${context.lineRange.end}\n`;
+      userPrompt += `行号范围: ${context.lineRange.start}-${context.lineRange.end}\n`;
     }
     
     if (context?.projectType) {
-      userPrompt += `Project Type: ${context.projectType}\n`;
+      userPrompt += `项目类型: ${context.projectType}\n`;
     }
     
     if (options?.focusAreas?.length) {
-      userPrompt += `Focus Areas: ${options.focusAreas.join(', ')}\n`;
+      userPrompt += `重点关注: ${options.focusAreas.join(', ')}\n`;
     }
     
-    userPrompt += `\n=== CODE TO EXPLAIN ===\n\`\`\`${context?.language || ''}\n${code}\n\`\`\``;
+    userPrompt += `\n=== 需要解释的代码 ===\n\`\`\`${context?.language || ''}\n${code}\n\`\`\``;
     
     if (context?.additionalContext) {
-      userPrompt += `\n\n=== ADDITIONAL CONTEXT ===\n${context.additionalContext}`;
+      userPrompt += `\n\n=== 补充信息 ===\n${context.additionalContext}`;
     }
     
     // Add specific instructions for DeepSeek
-    userPrompt += '\n\nPlease provide a clear and educational explanation of this code, ' +
-                  'focusing on its purpose, implementation details, and any notable patterns or techniques used.';
+    userPrompt += '\n\n请用中文提供清晰且有教育意义的代码解释，' +
+                  '重点说明代码的目的、实现细节以及使用的任何显著模式或技术。';
 
     messages.push({
       role: 'user',

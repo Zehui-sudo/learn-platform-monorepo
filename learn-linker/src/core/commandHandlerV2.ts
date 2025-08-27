@@ -9,6 +9,7 @@ import { SaveSnippetRequest } from '../services/api/types';
 import { ConfigurationService, FileContext } from '../services/config/configurationService';
 import { StorageManager } from '../services/storage/storageManager';
 import { ReviewQuality } from '../types/snippet';
+import { ASTAnalyzer } from '../services/ast/analyzer';
 import { 
   command, 
   CommandContext,
@@ -32,8 +33,14 @@ export class CommandHandlerV2 {
   private apiClient: ApiClient | null = null;
   private aiService: AIService;
   private storageManager: StorageManager;
+  private astAnalyzer: ASTAnalyzer;
   private context?: vscode.ExtensionContext;
-  private lastExplanation?: { code: string; explanation: string; context: FileContext };
+  private lastExplanation?: { 
+    code: string; 
+    explanation: string; 
+    context: FileContext;
+    astFeatures?: any; // Store AST analysis results
+  };
 
   private constructor() {
     this.logger = Logger.getInstance();
@@ -41,6 +48,7 @@ export class CommandHandlerV2 {
     this.configService = ConfigurationService.getInstance();
     this.aiService = AIService.getInstance();
     this.storageManager = StorageManager.getInstance();
+    this.astAnalyzer = ASTAnalyzer.getInstance();
   }
 
   public static getInstance(): CommandHandlerV2 {
@@ -186,6 +194,82 @@ export class CommandHandlerV2 {
     }
     
     // Update progress
+    context.progress?.report({ message: 'Analyzing code structure...' });
+    
+    // Perform AST analysis on selected code
+    let astFeatures = null;
+    try {
+      const astResult = await this.astAnalyzer.analyze(
+        context.selection!,
+        context.fileInfo!.language,
+        {
+          includeContext: true,
+          includeLocation: false,
+          timeout: 3000
+        }
+      );
+      
+      if (astResult && !astResult.errors?.length) {
+        astFeatures = astResult.matchingFeatures;
+        this.logger.info('AST analysis completed', {
+          patterns: astFeatures.patterns.length,
+          apiCalls: astFeatures.apiSignatures.length,
+          complexity: astFeatures.complexity
+        });
+        
+        // Show detailed AST analysis in output channel
+        this.logger.showOutputChannel(); // 自动显示输出面板
+        this.logger.outputToChannel('\n' + '='.repeat(60));
+        this.logger.outputToChannel('🔍 AST 分析结果');
+        this.logger.outputToChannel('='.repeat(60));
+        
+        // Syntax features detected
+        if (astFeatures.syntaxFlags.length > 0) {
+          this.logger.outputToChannel('\n📌 语法特征:');
+          astFeatures.syntaxFlags.forEach(flag => {
+            this.logger.outputToChannel(`   • ${flag}`);
+          });
+        }
+        
+        // Code patterns detected
+        if (astFeatures.patterns.length > 0) {
+          this.logger.outputToChannel('\n🎯 代码模式:');
+          astFeatures.patterns.forEach(pattern => {
+            this.logger.outputToChannel(`   • ${pattern}`);
+          });
+        }
+        
+        // API calls detected
+        if (astFeatures.apiSignatures.length > 0) {
+          this.logger.outputToChannel('\n📞 API 调用:');
+          astFeatures.apiSignatures.forEach(api => {
+            this.logger.outputToChannel(`   • ${api}`);
+          });
+        }
+        
+        // Complexity metrics
+        this.logger.outputToChannel('\n📊 复杂度指标:');
+        this.logger.outputToChannel(`   • 整体复杂度: ${astFeatures.complexity}`);
+        this.logger.outputToChannel(`   • 循环复杂度: ${astResult.features.complexity.cyclomaticComplexity}`);
+        this.logger.outputToChannel(`   • 代码行数: ${astResult.features.complexity.lineCount}`);
+        this.logger.outputToChannel(`   • 最大深度: ${astResult.features.complexity.maxDepth}`);
+        
+        // Context hints
+        if (astFeatures.contextHints && Object.keys(astFeatures.contextHints).length > 0) {
+          this.logger.outputToChannel('\n💡 上下文提示:');
+          Object.entries(astFeatures.contextHints).forEach(([key, value]) => {
+            if (value) {
+              this.logger.outputToChannel(`   • ${key}: ${value}`);
+            }
+          });
+        }
+        
+        this.logger.outputToChannel('\n' + '='.repeat(60) + '\n');
+      }
+    } catch (error) {
+      this.logger.warn('AST analysis failed, continuing without features', error);
+    }
+    
     context.progress?.report({ message: 'Analyzing code...' });
     
     // Get workspace config for preferences
@@ -256,14 +340,31 @@ export class CommandHandlerV2 {
     this.lastExplanation = {
       code: context.selection!,
       explanation: fullExplanation,
-      context: fileContext
+      context: fileContext,
+      astFeatures // Include AST features for enhanced matching
     };
     
     // Try to get knowledge links if platform is connected
     if (this.apiClient && this.configService.getFeatureStatus().platform.status === 'ready') {
       try {
         context.progress?.report({ message: 'Fetching related knowledge...' });
-        // Platform integration can be added here
+        
+        // Send code with AST features to platform for enhanced matching
+        const linksRequest = {
+          code: context.selection!,
+          language: context.fileInfo!.language,
+          filePath: context.fileInfo!.filePath,
+          features: astFeatures, // Include AST analysis results
+          topK: 5
+        };
+        
+        const knowledgeLinks = await this.apiClient.getLinks(linksRequest as any);
+        
+        if (knowledgeLinks && knowledgeLinks.length > 0) {
+          this.logger.info(`Found ${knowledgeLinks.length} related knowledge links`);
+          // TODO: Display knowledge links in the panel
+        }
+        
         this.logger.debug('Platform features available for knowledge links');
       } catch (error) {
         // Platform features are optional

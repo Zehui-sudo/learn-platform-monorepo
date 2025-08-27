@@ -239,25 +239,25 @@ export class OpenAIProvider implements AIProvider {
     let userPrompt = '';
     
     if (context?.language) {
-      userPrompt += `Language: ${context.language}\n`;
+      userPrompt += `编程语言: ${context.language}\n`;
     }
     
     if (context?.fileName) {
-      userPrompt += `File: ${context.fileName}\n`;
+      userPrompt += `文件名: ${context.fileName}\n`;
     }
     
     if (context?.lineRange) {
-      userPrompt += `Lines: ${context.lineRange.start}-${context.lineRange.end}\n`;
+      userPrompt += `行号: ${context.lineRange.start}-${context.lineRange.end}\n`;
     }
     
     if (options?.focusAreas?.length) {
-      userPrompt += `Focus on: ${options.focusAreas.join(', ')}\n`;
+      userPrompt += `重点关注: ${options.focusAreas.join(', ')}\n`;
     }
     
-    userPrompt += `\nCode to explain:\n\`\`\`${context?.language || ''}\n${code}\n\`\`\``;
+    userPrompt += `\n请解释下面的代码:\n\`\`\`${context?.language || ''}\n${code}\n\`\`\``;
     
     if (context?.additionalContext) {
-      userPrompt += `\n\nAdditional context: ${context.additionalContext}`;
+      userPrompt += `\n\n补充信息: ${context.additionalContext}`;
     }
 
     messages.push({

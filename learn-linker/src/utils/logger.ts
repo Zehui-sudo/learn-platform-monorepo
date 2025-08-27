@@ -98,6 +98,24 @@ export class Logger {
   public show(): void {
     this.outputChannel?.show();
   }
+  
+  /**
+   * Output directly to the output channel (always visible, no formatting)
+   */
+  public outputToChannel(message: string): void {
+    if (this.outputChannel) {
+      this.outputChannel.appendLine(message);
+    }
+  }
+  
+  /**
+   * Show the output channel
+   */
+  public showOutputChannel(): void {
+    if (this.outputChannel) {
+      this.outputChannel.show();
+    }
+  }
 
   public dispose(): void {
     this.outputChannel?.dispose();

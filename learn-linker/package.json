@@ -209,7 +209,12 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@babel/parser": "^7.28.3",
+    "@babel/traverse": "^7.28.3",
+    "@babel/types": "^7.28.2",
+    "@types/babel__traverse": "^7.28.0",
     "@types/eventsource": "^1.1.15",
+    "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/uuid": "^9.0.8",
