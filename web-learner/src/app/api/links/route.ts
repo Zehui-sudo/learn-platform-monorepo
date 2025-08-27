@@ -7,9 +7,10 @@ import { getKnowledgeLinkService } from '@/services/knowledgeLinkService';
  */
 
 interface ASTFeatures {
-  syntaxFlags: string[];
+  syntax: string[];        // Changed from syntaxFlags
   patterns: string[];
-  apiSignatures: string[];
+  apis: string[];          // Changed from apiSignatures  
+  concepts: string[];      // Added concepts
   complexity: 'low' | 'medium' | 'high';
   contextHints?: Record<string, boolean>;
 }
@@ -60,11 +61,12 @@ export async function POST(req: NextRequest) {
     let results;
 
     // Use feature-based matching if AST features are provided
-    if (features && (features.patterns.length > 0 || features.apiSignatures.length > 0)) {
+    if (features && (features.patterns.length > 0 || features.apis.length > 0 || features.syntax.length > 0)) {
       console.log('Using feature-based matching with AST features:', {
+        syntax: features.syntax.length,
         patterns: features.patterns.length,
-        apis: features.apiSignatures.length,
-        syntax: features.syntaxFlags.length
+        apis: features.apis.length,
+        concepts: features.concepts.length
       });
       
       results = await featureMatchingService.matchByFeatures(features, matchingLanguage, topK);

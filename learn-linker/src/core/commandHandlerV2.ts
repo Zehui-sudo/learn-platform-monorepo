@@ -222,15 +222,18 @@ export class CommandHandlerV2 {
         {
           includeContext: true,
           includeLocation: false,
-          timeout: 3000
+          timeout: 3000,
+          useV2Parser: true  // Use the new V2 parser for tag-based analysis
         }
       );
       
       if (astResult && !astResult.errors?.length) {
         astFeatures = astResult.matchingFeatures;
         this.logger.info('AST analysis completed', {
+          syntax: astFeatures.syntax.length,
           patterns: astFeatures.patterns.length,
-          apiCalls: astFeatures.apiSignatures.length,
+          apis: astFeatures.apis.length,
+          concepts: astFeatures.concepts.length,
           complexity: astFeatures.complexity
         });
         
@@ -240,10 +243,10 @@ export class CommandHandlerV2 {
         this.logger.outputToChannel('='.repeat(60));
         
         // Syntax features detected
-        if (astFeatures.syntaxFlags.length > 0) {
+        if (astFeatures.syntax.length > 0) {
           this.logger.outputToChannel('\n📌 语法特征:');
-          astFeatures.syntaxFlags.forEach(flag => {
-            this.logger.outputToChannel(`   • ${flag}`);
+          astFeatures.syntax.forEach(tag => {
+            this.logger.outputToChannel(`   • ${tag}`);
           });
         }
         
@@ -256,10 +259,18 @@ export class CommandHandlerV2 {
         }
         
         // API calls detected
-        if (astFeatures.apiSignatures.length > 0) {
+        if (astFeatures.apis.length > 0) {
           this.logger.outputToChannel('\n📞 API 调用:');
-          astFeatures.apiSignatures.forEach(api => {
+          astFeatures.apis.forEach(api => {
             this.logger.outputToChannel(`   • ${api}`);
+          });
+        }
+        
+        // Concepts detected
+        if (astFeatures.concepts.length > 0) {
+          this.logger.outputToChannel('\n💡 编程概念:');
+          astFeatures.concepts.forEach(concept => {
+            this.logger.outputToChannel(`   • ${concept}`);
           });
         }
         
@@ -312,9 +323,10 @@ export class CommandHandlerV2 {
         language: knowledgeRequest.language,
         hasFeatures: !!knowledgeRequest.features,
         featureDetails: astFeatures ? {
+          syntax: astFeatures.syntax.length,
           patterns: astFeatures.patterns.length,
-          apis: astFeatures.apiSignatures.length,
-          syntax: astFeatures.syntaxFlags.length
+          apis: astFeatures.apis.length,
+          concepts: astFeatures.concepts.length
         } : null
       });
       

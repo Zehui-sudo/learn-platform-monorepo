@@ -172,6 +172,51 @@
           "maximum": 60,
           "description": "Sync interval in minutes (when auto-sync is enabled)",
           "order": 26
+        },
+        "learnLinker.knowledgeLinks.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable knowledge link recommendations",
+          "order": 27
+        },
+        "learnLinker.knowledgeLinks.maxResults": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Maximum number of knowledge links to show",
+          "order": 28
+        },
+        "learnLinker.knowledgeLinks.minConfidence": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "default": "low",
+          "description": "Minimum confidence level for knowledge links",
+          "order": 29
+        },
+        "learnLinker.knowledgeLinks.showMatchReason": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show explanation for why links were matched",
+          "order": 30
+        },
+        "learnLinker.knowledgeLinks.cacheEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable caching of knowledge link results",
+          "order": 31
+        },
+        "learnLinker.knowledgeLinks.cacheTTL": {
+          "type": "number",
+          "default": 300000,
+          "minimum": 60000,
+          "maximum": 3600000,
+          "description": "Cache TTL in milliseconds (default: 5 minutes)",
+          "order": 32
         }
       }
     },

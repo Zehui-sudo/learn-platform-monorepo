@@ -1,0 +1,206 @@
+# Knowledge Metadata Template
+# 知识点元数据模板
+# 
+# This template defines the structure for knowledge point metadata
+# Use this template to create metadata for new knowledge points
+# 
+# Instructions:
+# 1. Copy this template for each knowledge point
+# 2. Fill in all required fields
+# 3. Add relevant tags for matching
+# 4. Save as {knowledge-id}.yaml in the metadata directory
+
+# Example metadata for a JavaScript knowledge point
+id: js-sec-X-X-X  # Unique identifier following pattern: {language}-sec-{chapter}-{section}-{subsection}
+title: "Knowledge Point Title"  # Display title in Chinese
+chapterTitle: "Chapter Title"  # Chapter context
+chapterId: js-chapter-X  # Chapter identifier
+
+# Programming language
+language: javascript  # Options: javascript, python
+
+# Metadata tags for matching
+metadata:
+  # Syntax tags: Language syntax features
+  # Examples: let, const, var, arrow-function, async, await, class, function
+  syntax:
+    - syntax-tag-1
+    - syntax-tag-2
+  
+  # Pattern tags: Common code patterns
+  # Examples: promise-chain, callback, array-iteration, error-handling
+  patterns:
+    - pattern-tag-1
+    - pattern-tag-2
+  
+  # API tags: Specific APIs and methods
+  # Format: Object.method or method
+  # Examples: Array.map, Promise.all, fetch, console.log
+  apis:
+    - API.method1
+    - API.method2
+  
+  # Concept tags: Programming concepts
+  # Examples: closure, hoisting, scope, async-programming
+  concepts:
+    - concept-tag-1
+    - concept-tag-2
+  
+  # Learning metadata
+  difficulty: intermediate  # Options: basic, intermediate, advanced
+  
+  # Prerequisites: Other knowledge point IDs required before this
+  dependencies:
+    - js-sec-1-1-1
+    - js-sec-1-2-1
+  
+  # Related topics: Other relevant knowledge point IDs
+  related:
+    - js-sec-3-1-1
+    - js-sec-4-2-3
+  
+  # Optional: Additional keywords for search (Chinese/English)
+  keywords:
+    - keyword1
+    - keyword2
+  
+  # Optional: Learning metrics
+  examples: 3  # Number of examples in content
+  exercises: 2  # Number of exercises
+  estimatedTime: 15  # Minutes
+
+# Content location
+contentPath: /content/javascript/section-X-X-X.md  # Path to markdown file
+contentType: markdown  # Options: markdown, html, json
+
+# Version tracking
+version: "1.0.0"
+createdAt: 2025-01-27T00:00:00Z
+updatedAt: 2025-01-27T00:00:00Z
+
+---
+# Example: Async/Await Knowledge Point
+---
+id: js-sec-3-5-1
+title: "异步编程基础"
+chapterTitle: "异步编程"
+chapterId: js-chapter-3
+language: javascript
+
+metadata:
+  syntax:
+    - async
+    - await
+    - arrow-function
+    - try-catch
+  
+  patterns:
+    - async-await
+    - promise-chain
+    - error-handling
+    - sequential-async
+  
+  apis:
+    - Promise
+    - Promise.all
+    - Promise.resolve
+    - fetch
+    - setTimeout
+  
+  concepts:
+    - async-programming
+    - event-loop
+    - non-blocking
+    - promise
+  
+  difficulty: intermediate
+  
+  dependencies:
+    - js-sec-1-3-1  # Functions
+    - js-sec-2-4-1  # Error handling
+  
+  related:
+    - js-sec-3-5-2  # Promise链式调用
+    - js-sec-3-5-3  # 并行异步操作
+  
+  keywords:
+    - 异步
+    - 异步编程
+    - async/await
+    - Promise
+    - 非阻塞
+  
+  examples: 5
+  exercises: 3
+  estimatedTime: 20
+
+contentPath: /content/javascript/async-await-basics.md
+contentType: markdown
+version: "1.0.0"
+createdAt: 2025-01-27T10:00:00Z
+updatedAt: 2025-01-27T10:00:00Z
+
+---
+# Example: Array Methods Knowledge Point
+---
+id: js-sec-2-3-1
+title: "数组高级方法"
+chapterTitle: "数据结构"
+chapterId: js-chapter-2
+language: javascript
+
+metadata:
+  syntax:
+    - arrow-function
+    - const
+    - let
+    - destructuring
+  
+  patterns:
+    - array-iteration
+    - functional-programming
+    - method-chaining
+    - immutable-operations
+  
+  apis:
+    - Array.map
+    - Array.filter
+    - Array.reduce
+    - Array.forEach
+    - Array.find
+    - Array.some
+    - Array.every
+  
+  concepts:
+    - functional-programming
+    - immutability
+    - higher-order-functions
+    - array-manipulation
+  
+  difficulty: intermediate
+  
+  dependencies:
+    - js-sec-1-2-1  # Arrays basics
+    - js-sec-1-3-2  # Arrow functions
+  
+  related:
+    - js-sec-2-3-2  # Array destructuring
+    - js-sec-4-1-1  # Functional programming
+  
+  keywords:
+    - 数组
+    - 数组方法
+    - map
+    - filter
+    - reduce
+    - 函数式编程
+  
+  examples: 8
+  exercises: 5
+  estimatedTime: 25
+
+contentPath: /content/javascript/array-methods.md
+contentType: markdown
+version: "1.0.0"
+createdAt: 2025-01-27T10:00:00Z
+updatedAt: 2025-01-27T10:00:00Z

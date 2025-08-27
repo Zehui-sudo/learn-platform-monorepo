@@ -678,8 +678,71 @@ graph TD
 - 实现 Claude API 集成
 - 参考现有 DeepSeek/OpenAI 实现
 
+### 2025-08-27 (元数据驱动匹配系统更新)
+- ✅ **完成元数据驱动的知识匹配系统重构**:
+  - 移除硬编码规则，实现基于标签的灵活匹配
+  - 创建科学的Jaccard相似度算法
+  - 实现倒排索引结构提升匹配性能
+
+- ✅ **AST分析器V2升级**:
+  - `/learn-linker/src/services/ast/javascriptV2.ts` - 新版JavaScript解析器
+  - 输出结构化标签数组替代布尔标志
+  - 精确API调用格式化（`Array.map` vs `unknown.map`）
+  - 新增概念检测（闭包、提升、作用域等）
+
+- ✅ **元数据服务架构**:
+  - `/web-learner/src/types/metadata.ts` - 完整元数据类型定义
+  - `/web-learner/src/services/metadataService.ts` - 元数据管理服务
+  - 支持动态加载YAML格式知识点元数据
+  - 包含5个测试知识点的硬编码数据
+
+- ✅ **匹配系统重构**:
+  - `/web-learner/src/services/featureMatchingService.ts` - 重构为元数据驱动
+  - 移除256行硬编码特征提取逻辑
+  - 使用MetadataService进行标签匹配
+  - 保持向后兼容的API接口
+
+- ✅ **API端点更新**:
+  - `/web-learner/src/app/api/links/route.ts` - 支持新标签结构
+  - 更新字段名：`syntax`、`apis`、`concepts`（替代旧字段）
+  - 兼容V2 AST分析器输出格式
+
+- ✅ **命令处理器升级**:
+  - `/learn-linker/src/core/commandHandlerV2.ts` - 集成V2解析器
+  - 启用`useV2Parser`选项进行标签分析
+  - 更新输出格式展示所有标签类型（语法、模式、API、概念）
+  - 改进用户反馈显示
+
+- ✅ **元数据模板创建**:
+  - `/web-learner/src/data/metadata-template.yaml` - 标准化模板
+  - 包含完整示例（异步编程、数组方法）
+  - 支持后续批量生成知识点元数据
+
+**架构改进成果**:
+1. **灵活性提升**: 通过标签匹配替代硬编码规则，支持动态扩展
+2. **匹配精度提升**: 基于Jaccard相似度的科学算法，匹配更准确  
+3. **维护性提升**: 元数据与代码分离，易于管理和更新
+4. **可扩展性提升**: YAML格式支持快速添加新知识点
+5. **性能提升**: 倒排索引结构实现O(1)标签查找
+
+**标签体系设计**:
+- **Syntax标签**: 语言语法特征（`let`、`const`、`async`、`class`等）
+- **Pattern标签**: 代码模式（`promise-chain`、`array-iteration`、`error-handling`等）
+- **API标签**: 具体API调用（`Array.map`、`Promise.all`、`fetch`等）
+- **Concept标签**: 编程概念（`closure`、`hoisting`、`async-programming`等）
+
+**测试数据**:
+- 5个JavaScript知识点已配置完整标签
+- 涵盖异步编程、数组方法、对象操作、错误处理、基础语法
+
+**向后兼容**:
+- 保持原有API接口不变
+- 支持渐进式迁移，不影响现有功能
+- 新旧解析器可并存使用
+
 ### 已知技术债务
 1. Webview CSP 配置使用了 CDN，生产环境应考虑本地打包
 2. Markdown 渲染性能可优化
 3. 错误处理可以更细粒度
 4. 需要添加单元测试覆盖
+5. **新增**: 需要生成更多知识点元数据文件以扩展匹配覆盖率

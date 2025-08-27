@@ -5,13 +5,15 @@
  */
 
 export interface CodeFeatures {
-  syntax: SyntaxFeatures;
-  patterns: CodePattern[];
-  apiCalls: APICall[];
+  syntax: string[];        // Specific syntax tags: ['let', 'const', 'arrow-function']
+  patterns: string[];      // Pattern tags: ['promise-chain', 'callback']
+  apis: string[];          // API calls: ['Array.map', 'Promise.all']
+  concepts: string[];      // Abstract concepts: ['closure', 'hoisting']
   complexity: ComplexityMetrics;
   context: CodeContext;
 }
 
+// Legacy interface - will be removed in future
 export interface SyntaxFeatures {
   // JavaScript/TypeScript features
   hasAsync?: boolean;
@@ -34,6 +36,7 @@ export interface SyntaxFeatures {
   hasFString?: boolean;
 }
 
+// Legacy interface for backward compatibility
 export interface CodePattern {
   type: PatternType;
   confidence: number; // 0-1
@@ -41,6 +44,122 @@ export interface CodePattern {
   description?: string;
 }
 
+// Pattern types as string constants for new system
+export const PatternTags = {
+  // Async patterns
+  ASYNC_AWAIT: 'async-await',
+  PROMISE_CHAIN: 'promise-chain',
+  CALLBACK: 'callback',
+  
+  // Error handling
+  ERROR_HANDLING: 'error-handling',
+  TRY_CATCH: 'try-catch',
+  
+  // Data manipulation
+  ARRAY_METHODS: 'array-methods',
+  OBJECT_DESTRUCTURING: 'object-destructuring',
+  ARRAY_DESTRUCTURING: 'array-destructuring',
+  
+  // Control flow
+  CONDITIONAL: 'conditional',
+  LOOP: 'loop',
+  RECURSIVE: 'recursive',
+  
+  // OOP patterns
+  CLASS_DEFINITION: 'class-definition',
+  INHERITANCE: 'inheritance',
+  
+  // Functional patterns
+  HIGHER_ORDER_FUNCTION: 'higher-order-function',
+  CLOSURE: 'closure',
+  CURRYING: 'currying',
+  COMPOSITION: 'composition',
+  
+  // Event patterns
+  EVENT_HANDLER: 'event-handler',
+  EVENT_DELEGATION: 'event-delegation',
+  
+  // Module patterns
+  MODULE_PATTERN: 'module-pattern',
+  FACTORY_PATTERN: 'factory-pattern',
+  
+  // Python specific
+  DECORATOR_PATTERN: 'decorator-pattern',
+  GENERATOR_PATTERN: 'generator-pattern',
+  LIST_COMPREHENSION: 'list-comprehension',
+  CONTEXT_MANAGER: 'context-manager'
+} as const;
+
+// Syntax tags for new system
+export const SyntaxTags = {
+  // Variable declarations
+  VAR: 'var',
+  LET: 'let',
+  CONST: 'const',
+  
+  // Functions
+  FUNCTION: 'function',
+  ARROW_FUNCTION: 'arrow-function',
+  ASYNC: 'async',
+  AWAIT: 'await',
+  GENERATOR: 'generator',
+  
+  // Data types
+  TEMPLATE_LITERAL: 'template-literal',
+  DESTRUCTURING: 'destructuring',
+  SPREAD: 'spread',
+  REST: 'rest',
+  
+  // OOP
+  CLASS: 'class',
+  EXTENDS: 'extends',
+  SUPER: 'super',
+  STATIC: 'static',
+  
+  // Control flow
+  IF_ELSE: 'if-else',
+  SWITCH: 'switch',
+  FOR: 'for',
+  WHILE: 'while',
+  DO_WHILE: 'do-while',
+  FOR_OF: 'for-of',
+  FOR_IN: 'for-in',
+  
+  // Error handling
+  TRY_CATCH: 'try-catch',
+  THROW: 'throw',
+  FINALLY: 'finally',
+  
+  // Modules
+  IMPORT: 'import',
+  EXPORT: 'export',
+  
+  // Operators
+  TERNARY: 'ternary',
+  NULLISH_COALESCING: 'nullish-coalescing',
+  OPTIONAL_CHAINING: 'optional-chaining'
+} as const;
+
+// Concept tags for abstract concepts
+export const ConceptTags = {
+  SCOPE: 'scope',
+  CLOSURE: 'closure',
+  HOISTING: 'hoisting',
+  THIS_BINDING: 'this-binding',
+  PROTOTYPE_CHAIN: 'prototype-chain',
+  EVENT_LOOP: 'event-loop',
+  TYPE_COERCION: 'type-coercion',
+  IMMUTABILITY: 'immutability',
+  SIDE_EFFECTS: 'side-effects',
+  PURE_FUNCTION: 'pure-function',
+  MEMOIZATION: 'memoization',
+  RECURSION: 'recursion',
+  CALLBACK_HELL: 'callback-hell',
+  PROMISE_CHAINING: 'promise-chaining',
+  ASYNC_CONTROL_FLOW: 'async-control-flow'
+} as const;
+
+// Legacy enum - kept for backward compatibility
 export enum PatternType {
   // Async patterns
   ASYNC_AWAIT = 'async-await',
