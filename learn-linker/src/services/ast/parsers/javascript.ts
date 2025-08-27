@@ -59,7 +59,12 @@ export class JavaScriptParser {
         context
       };
     } catch (error) {
-      this.logger.error('Failed to parse JavaScript code', error);
+      this.logger.error('Failed to parse JavaScript code', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        codeSnippet: code.substring(0, 100),
+        isTypeScript
+      });
       throw error;
     }
   }
@@ -94,11 +99,42 @@ export class JavaScriptParser {
       'nullishCoalescingOperator'
     );
 
-    return parser.parse(code, {
-      sourceType: 'unambiguous',
-      plugins,
-      errorRecovery: true // Try to recover from parse errors
-    });
+    try {
+      // Try to parse as a complete program first
+      return parser.parse(code, {
+        sourceType: 'unambiguous',
+        plugins,
+        errorRecovery: true
+      });
+    } catch (error) {
+      // If it fails, wrap in a function to ensure we have a valid program
+      // This handles code snippets that are not complete programs
+      const wrappedCode = `(function() {\n${code}\n})()`;
+      try {
+        return parser.parse(wrappedCode, {
+          sourceType: 'unambiguous',
+          plugins,
+          errorRecovery: true
+        });
+      } catch (wrapError) {
+        // If wrapping also fails, return a minimal AST
+        this.logger.warn('Failed to parse code, returning minimal AST', {
+          originalError: error instanceof Error ? error.message : String(error),
+          wrapError: wrapError instanceof Error ? wrapError.message : String(wrapError),
+          codeSnippet: code.substring(0, 100)
+        });
+        // Return empty program AST to avoid traverse errors
+        return {
+          type: 'File',
+          program: {
+            type: 'Program',
+            body: [],
+            directives: [],
+            sourceType: 'script'
+          }
+        };
+      }
+    }
   }
 
   /**
@@ -584,12 +620,35 @@ export class JavaScriptParser {
   private containsAwait(node: any): boolean {
     let hasAwait = false;
     
-    traverse(node, {
-      AwaitExpression() {
-        hasAwait = true;
+    // Use simple recursive check instead of traverse to avoid scope issues
+    const checkNode = (n: any): boolean => {
+      if (!n || typeof n !== 'object') return false;
+      
+      // Check if current node is an await expression
+      if (n.type === 'AwaitExpression') {
+        return true;
       }
-    });
+      
+      // Recursively check all properties
+      for (const key in n) {
+        if (key === 'loc' || key === 'range' || key === 'leadingComments' || key === 'trailingComments') {
+          continue; // Skip metadata
+        }
+        
+        const value = n[key];
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            if (checkNode(item)) return true;
+          }
+        } else if (typeof value === 'object' && value !== null) {
+          if (checkNode(value)) return true;
+        }
+      }
+      
+      return false;
+    };
     
+    hasAwait = checkNode(node);
     return hasAwait;
   }
 

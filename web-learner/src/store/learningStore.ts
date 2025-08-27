@@ -238,8 +238,20 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       
       loadPath: async (language: 'python' | 'javascript') => {
         const state = get();
-        if (state.loading.path || state.currentPath?.language === language) {
-          return;
+        if (state.loading.path) {
+          // Wait for the current loading to finish
+          return new Promise<void>((resolve) => {
+            const checkLoading = setInterval(() => {
+              if (!get().loading.path) {
+                clearInterval(checkLoading);
+                resolve();
+              }
+            }, 50);
+          });
+        }
+        
+        if (state.currentPath?.language === language) {
+          return Promise.resolve();
         }
         
         set(state => ({

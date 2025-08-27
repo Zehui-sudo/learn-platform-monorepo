@@ -10,6 +10,9 @@ import { ConfigurationService, FileContext } from '../services/config/configurat
 import { StorageManager } from '../services/storage/storageManager';
 import { ReviewQuality } from '../types/snippet';
 import { ASTAnalyzer } from '../services/ast/analyzer';
+import { KnowledgeApi } from '../services/api/knowledgeApi';
+import { LinkRenderer } from './linkRenderer';
+import type { KnowledgeLinkRequest, SectionLink } from '../types/knowledge';
 import { 
   command, 
   CommandContext,
@@ -34,12 +37,15 @@ export class CommandHandlerV2 {
   private aiService: AIService;
   private storageManager: StorageManager;
   private astAnalyzer: ASTAnalyzer;
+  private knowledgeApi: KnowledgeApi;
+  private linkRenderer: LinkRenderer;
   private context?: vscode.ExtensionContext;
   private lastExplanation?: { 
     code: string; 
     explanation: string; 
     context: FileContext;
     astFeatures?: any; // Store AST analysis results
+    knowledgeLinks?: SectionLink[]; // Store knowledge links
   };
 
   private constructor() {
@@ -49,6 +55,8 @@ export class CommandHandlerV2 {
     this.aiService = AIService.getInstance();
     this.storageManager = StorageManager.getInstance();
     this.astAnalyzer = ASTAnalyzer.getInstance();
+    this.knowledgeApi = KnowledgeApi.getInstance();
+    this.linkRenderer = LinkRenderer.getInstance();
   }
 
   public static getInstance(): CommandHandlerV2 {
@@ -196,6 +204,15 @@ export class CommandHandlerV2 {
     // Update progress
     context.progress?.report({ message: 'Analyzing code structure...' });
     
+    // Always show output channel at the beginning
+    this.logger.showOutputChannel();
+    this.logger.outputToChannel('\n' + '='.repeat(60));
+    this.logger.outputToChannel('📝 代码解释');
+    this.logger.outputToChannel('='.repeat(60));
+    this.logger.outputToChannel(`文件: ${context.fileInfo!.fileName}`);
+    this.logger.outputToChannel(`语言: ${context.fileInfo!.language}`);
+    this.logger.outputToChannel('='.repeat(60) + '\n');
+    
     // Perform AST analysis on selected code
     let astFeatures = null;
     try {
@@ -218,7 +235,6 @@ export class CommandHandlerV2 {
         });
         
         // Show detailed AST analysis in output channel
-        this.logger.showOutputChannel(); // 自动显示输出面板
         this.logger.outputToChannel('\n' + '='.repeat(60));
         this.logger.outputToChannel('🔍 AST 分析结果');
         this.logger.outputToChannel('='.repeat(60));
@@ -265,9 +281,68 @@ export class CommandHandlerV2 {
         }
         
         this.logger.outputToChannel('\n' + '='.repeat(60) + '\n');
+      } else {
+        this.logger.outputToChannel('\n⚠️ AST 分析结果不完整或有错误');
       }
     } catch (error) {
       this.logger.warn('AST analysis failed, continuing without features', error);
+      this.logger.outputToChannel('\n❌ AST 分析失败: ' + (error instanceof Error ? error.message : String(error)));
+      this.logger.outputToChannel('将继续执行，但无法提供代码结构分析\n');
+    }
+    
+    // Fetch knowledge links using AST features
+    let knowledgeLinks: SectionLink[] = [];
+    try {
+      context.progress?.report({ message: 'Fetching related knowledge links...' });
+      
+      // Log the request details for debugging
+      this.logger.outputToChannel('\n正在获取相关知识链接...');
+      
+      const knowledgeRequest: KnowledgeLinkRequest = {
+        code: context.selection!,
+        language: context.fileInfo!.language as 'javascript' | 'python' | 'typescript',
+        features: astFeatures || undefined,
+        filePath: context.fileInfo!.filePath,
+        topK: 5
+      };
+      
+      this.logger.debug('Knowledge link request:', {
+        hasCode: !!knowledgeRequest.code,
+        codeLength: knowledgeRequest.code?.length,
+        language: knowledgeRequest.language,
+        hasFeatures: !!knowledgeRequest.features,
+        featureDetails: astFeatures ? {
+          patterns: astFeatures.patterns.length,
+          apis: astFeatures.apiSignatures.length,
+          syntax: astFeatures.syntaxFlags.length
+        } : null
+      });
+      
+      const knowledgeResponse = await this.knowledgeApi.fetchKnowledgeLinks(knowledgeRequest);
+      
+      if (knowledgeResponse.success && knowledgeResponse.data && knowledgeResponse.data.length > 0) {
+        knowledgeLinks = knowledgeResponse.data;
+        this.logger.info(`Found ${knowledgeLinks.length} knowledge links`);
+        this.logger.outputToChannel(`\n✅ 找到 ${knowledgeLinks.length} 个相关知识点`);
+        
+        // Render knowledge links in output channel
+        const linksOutput = this.linkRenderer.renderKnowledgeLinks(knowledgeLinks);
+        this.logger.outputToChannel(linksOutput);
+      } else {
+        this.logger.warn('No knowledge links found or service unavailable', {
+          success: knowledgeResponse.success,
+          dataLength: knowledgeResponse.data?.length,
+          error: knowledgeResponse.error
+        });
+        
+        // Still show the empty state in output
+        const linksOutput = this.linkRenderer.renderKnowledgeLinks([]);
+        this.logger.outputToChannel(linksOutput);
+      }
+    } catch (error) {
+      this.logger.warn('Failed to fetch knowledge links', error);
+      this.logger.outputToChannel('\n❌ 获取知识链接失败: ' + (error instanceof Error ? error.message : String(error)));
+      // Continue without knowledge links - don't fail the whole operation
     }
     
     context.progress?.report({ message: 'Analyzing code...' });
@@ -341,7 +416,8 @@ export class CommandHandlerV2 {
       code: context.selection!,
       explanation: fullExplanation,
       context: fileContext,
-      astFeatures // Include AST features for enhanced matching
+      astFeatures, // Include AST features for enhanced matching
+      knowledgeLinks // Include knowledge links for reference
     };
     
     // Try to get knowledge links if platform is connected
