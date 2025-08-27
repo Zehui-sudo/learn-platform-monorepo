@@ -260,6 +260,13 @@ export class AIService {
   }
 
   /**
+   * Get current provider name
+   */
+  public getCurrentProvider(): string | undefined {
+    return this.config?.provider;
+  }
+
+  /**
    * Reset the service
    */
   public reset(): void {

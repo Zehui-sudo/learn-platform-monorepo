@@ -32,6 +32,26 @@
       {
         "command": "learn-linker.showSettings",
         "title": "Learn Linker: Show Settings"
+      },
+      {
+        "command": "learn-linker.showSnippetCollection",
+        "title": "Learn Linker: Show Snippet Collection"
+      },
+      {
+        "command": "learn-linker.showReviewQueue",
+        "title": "Learn Linker: Show Review Queue"
+      },
+      {
+        "command": "learn-linker.exportSnippets",
+        "title": "Learn Linker: Export Snippets"
+      },
+      {
+        "command": "learn-linker.importSnippets",
+        "title": "Learn Linker: Import Snippets"
+      },
+      {
+        "command": "learn-linker.showStatistics",
+        "title": "Learn Linker: Show Learning Statistics"
       }
     ],
     "configuration": {
@@ -39,7 +59,12 @@
       "properties": {
         "learnLinker.ai.provider": {
           "type": "string",
-          "enum": ["openai", "deepseek", "anthropic", "doubao"],
+          "enum": [
+            "openai",
+            "deepseek",
+            "anthropic",
+            "doubao"
+          ],
           "enumDescriptions": [
             "OpenAI (GPT-4, GPT-3.5)",
             "DeepSeek (Cost-effective code model)",
@@ -92,7 +117,10 @@
         },
         "learnLinker.storage.location": {
           "type": "string",
-          "enum": ["workspace", "global"],
+          "enum": [
+            "workspace",
+            "global"
+          ],
           "enumDescriptions": [
             "Store snippets per workspace",
             "Store snippets globally"
@@ -182,18 +210,18 @@
   },
   "devDependencies": {
     "@types/eventsource": "^1.1.15",
-    "@types/uuid": "^9.0.7",
-    "@types/vscode": "^1.103.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
+    "@types/uuid": "^9.0.8",
+    "@types/vscode": "^1.103.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
-    "eslint": "^9.32.0",
-    "typescript": "^5.9.2",
-    "ts-loader": "^9.5.2",
-    "webpack": "^5.101.0",
-    "webpack-cli": "^6.0.1",
     "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.32.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.0",
+    "webpack-cli": "^6.0.1"
   }
 }

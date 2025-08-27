@@ -51,7 +51,7 @@ export class ExplanationPanel {
       code: string;
       language?: string;
       fileName?: string;
-      lineRange?: { start: number; end: number };
+      lineRange?: { start: number; end: number } | string;
     }
   ): Promise<ExplanationPanel> {
     const column = vscode.ViewColumn.Beside;
@@ -94,15 +94,22 @@ export class ExplanationPanel {
     return ExplanationPanel.currentPanel;
   }
 
-  public async streamContent(stream: ReadableStream<string>) {
+  public async appendContent(content: string) {
+    this.panel.webview.postMessage({
+      type: 'appendContent',
+      content
+    });
+  }
+
+  public async streamContent(stream: ReadableStream<string>): Promise<string> {
     const reader = stream.getReader();
     const decoder = new TextDecoder();
 
     // Send start signal
     this.panel.webview.postMessage({ type: 'streamStart' });
 
+    let buffer = '';
     try {
-      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -125,12 +132,14 @@ export class ExplanationPanel {
       this.panel.webview.postMessage({ type: 'streamEnd' });
       
       this.logger.info('Stream completed successfully');
+      return buffer;
     } catch (error) {
       this.logger.error('Stream error:', error);
       this.panel.webview.postMessage({
         type: 'streamError',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
+      throw error; // Re-throw to handle in caller
     }
   }
 
