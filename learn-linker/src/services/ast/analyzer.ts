@@ -6,6 +6,7 @@
 
 import * as vscode from 'vscode';
 import { JavaScriptParser } from './parsers/javascript';
+import { JavaScriptParserV2 } from './parsers/javascriptV2';
 import { PythonParser } from './parsers/python';
 import {
   CodeFeatures,
@@ -22,11 +23,14 @@ import * as path from 'path';
 export class ASTAnalyzer {
   private static instance: ASTAnalyzer;
   private jsParser: JavaScriptParser;
+  private jsParserV2: JavaScriptParserV2;
   private pyParser: PythonParser;
   private logger: Logger;
+  private useV2Parser: boolean = true; // Flag to switch between parsers
   
   private constructor() {
     this.jsParser = new JavaScriptParser();
+    this.jsParserV2 = new JavaScriptParserV2();
     this.pyParser = new PythonParser();
     this.logger = Logger.getInstance();
   }
@@ -66,10 +70,18 @@ export class ASTAnalyzer {
       switch (language) {
         case 'javascript':
         case 'typescript':
-          features = await this.analyzeWithTimeout(
-            () => this.jsParser.parse(code, language === 'typescript'),
-            options.timeout || 5000
-          );
+          // Use V2 parser if enabled
+          if (this.useV2Parser) {
+            features = await this.analyzeWithTimeout(
+              () => this.jsParserV2.parse(code, language === 'typescript'),
+              options.timeout || 5000
+            );
+          } else {
+            features = await this.analyzeWithTimeout(
+              () => this.jsParser.parse(code, language === 'typescript'),
+              options.timeout || 5000
+            );
+          }
           break;
           
         case 'python':
@@ -134,24 +146,44 @@ export class ASTAnalyzer {
    * Generate matching features for API transmission
    */
   generateMatchingFeatures(features: CodeFeatures, language: string): MatchingFeatures {
-    // Extract active syntax features
-    const syntaxFlags: string[] = [];
-    Object.entries(features.syntax).forEach(([key, value]) => {
-      if (value === true) {
-        syntaxFlags.push(key.replace('has', '').toLowerCase());
+    // Check if using new format (arrays) or old format (object with booleans)
+    const isNewFormat = Array.isArray(features.syntax);
+    
+    let syntaxFlags: string[] = [];
+    let patterns: string[] = [];
+    let apiSignatures: string[] = [];
+    
+    if (isNewFormat) {
+      // New format - already in correct structure
+      syntaxFlags = features.syntax as string[];
+      patterns = features.patterns as string[];
+      apiSignatures = features.apis as string[];
+    } else {
+      // Old format - convert from boolean flags
+      const syntaxObj = features.syntax as any;
+      Object.entries(syntaxObj).forEach(([key, value]) => {
+        if (value === true) {
+          syntaxFlags.push(key.replace('has', '').toLowerCase());
+        }
+      });
+      
+      // Extract pattern types from old format
+      const patternObjs = features.patterns as any;
+      if (Array.isArray(patternObjs)) {
+        patterns = patternObjs.map((p: any) => p.type);
       }
-    });
-
-    // Extract pattern types
-    const patterns = features.patterns.map(p => p.type);
-
-    // Extract API signatures (simplified)
-    const apiSignatures = features.apiCalls.map(call => {
-      if (call.object) {
-        return `${call.object}.${call.method}`;
+      
+      // Extract API signatures from old format
+      const apiCallObjs = features.apiCalls as any;
+      if (Array.isArray(apiCallObjs)) {
+        apiSignatures = apiCallObjs.map((call: any) => {
+          if (call.object) {
+            return `${call.object}.${call.method}`;
+          }
+          return call.method;
+        });
       }
-      return call.method;
-    });
+    }
 
     // Determine complexity level
     let complexity: 'low' | 'medium' | 'high' = 'low';
